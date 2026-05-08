@@ -14,6 +14,7 @@ import { CodeEditor } from "@/components/editor/CodeEditor";
 import { PreviewFrame } from "@/components/preview/PreviewFrame";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { HeaderActions } from "@/components/HeaderActions";
+import { cn } from "@/lib/utils";
 
 interface MainContentProps {
   user?: {
@@ -32,6 +33,7 @@ interface MainContentProps {
 
 export function MainContent({ user, project }: MainContentProps) {
   const [activeView, setActiveView] = useState<"preview" | "code">("preview");
+  const [codeMounted, setCodeMounted] = useState(false);
 
   return (
     <FileSystemProvider initialData={project?.data}>
@@ -62,9 +64,11 @@ export function MainContent({ user, project }: MainContentProps) {
                 <div className="h-14 border-b border-neutral-200/60 px-6 flex items-center justify-between bg-neutral-50/50">
                   <Tabs
                     value={activeView}
-                    onValueChange={(v) =>
-                      setActiveView(v as "preview" | "code")
-                    }
+                    onValueChange={(v) => {
+                      const view = v as "preview" | "code";
+                      setActiveView(view);
+                      if (view === "code") setCodeMounted(true);
+                    }}
                   >
                     <TabsList className="bg-white/60 border border-neutral-200/60 p-0.5 h-9 shadow-sm">
                       <TabsTrigger value="preview" className="data-[state=active]:bg-white data-[state=active]:text-neutral-900 data-[state=active]:shadow-sm text-neutral-600 px-4 py-1.5 text-sm font-medium transition-all">Preview</TabsTrigger>
@@ -75,36 +79,43 @@ export function MainContent({ user, project }: MainContentProps) {
                 </div>
 
                 {/* Content Area */}
-                <div className="flex-1 overflow-hidden bg-neutral-50">
-                  {activeView === "preview" ? (
-                    <div className="h-full bg-white">
-                      <PreviewFrame />
-                    </div>
-                  ) : (
-                    <ResizablePanelGroup
-                      direction="horizontal"
-                      className="h-full"
-                    >
-                      {/* File Tree */}
-                      <ResizablePanel
-                        defaultSize={30}
-                        minSize={20}
-                        maxSize={50}
+                <div className="flex-1 overflow-hidden bg-neutral-50 relative">
+                  <div className={cn(
+                    "absolute inset-0 bg-white",
+                    activeView !== "preview" && "opacity-0 pointer-events-none"
+                  )}>
+                    <PreviewFrame />
+                  </div>
+                  {codeMounted && (
+                    <div className={cn(
+                      "absolute inset-0",
+                      activeView !== "code" && "opacity-0 pointer-events-none"
+                    )}>
+                      <ResizablePanelGroup
+                        direction="horizontal"
+                        className="h-full"
                       >
-                        <div className="h-full bg-neutral-50 border-r border-neutral-200">
-                          <FileTree />
-                        </div>
-                      </ResizablePanel>
+                        {/* File Tree */}
+                        <ResizablePanel
+                          defaultSize={30}
+                          minSize={20}
+                          maxSize={50}
+                        >
+                          <div className="h-full bg-neutral-50 border-r border-neutral-200">
+                            <FileTree />
+                          </div>
+                        </ResizablePanel>
 
-                      <ResizableHandle className="w-[1px] bg-neutral-200 hover:bg-neutral-300 transition-colors" />
+                        <ResizableHandle className="w-[1px] bg-neutral-200 hover:bg-neutral-300 transition-colors" />
 
-                      {/* Code Editor */}
-                      <ResizablePanel defaultSize={70}>
-                        <div className="h-full bg-white">
-                          <CodeEditor />
-                        </div>
-                      </ResizablePanel>
-                    </ResizablePanelGroup>
+                        {/* Code Editor */}
+                        <ResizablePanel defaultSize={70}>
+                          <div className="h-full bg-white">
+                            <CodeEditor />
+                          </div>
+                        </ResizablePanel>
+                      </ResizablePanelGroup>
+                    </div>
                   )}
                 </div>
               </div>
